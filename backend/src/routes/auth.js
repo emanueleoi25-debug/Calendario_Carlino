@@ -1,5 +1,6 @@
 const express = require('express');
 const { getDb } = require('../utils/db');
+const bcrypt = require('bcrypt');
 const { generateToken, authMiddleware } = require('../utils/auth');
 
 const router = express.Router();
@@ -18,7 +19,16 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Credenziali non valide' });
     }
 
-    if (password !== user.password_hash) {
+    let isValid = false;
+
+    // Se la password nel DB è un hash bcrypt (inizia con $2)
+    if (typeof user.password_hash === 'string' && user.password_hash.startsWith('$2')) {
+      isValid = await bcrypt.compare(password, user.password_hash);
+    } else {
+      // Fallback: confronto in chiaro (per password seminate come 'admin123')
+      isValid = password === user.password_hash;
+    }
+    if (!isValid) {
       return res.status(401).json({ message: 'Credenziali non valide' });
     }
 

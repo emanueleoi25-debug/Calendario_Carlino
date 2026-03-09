@@ -8,6 +8,7 @@ const adminRoutes = require('./routes/admin');
 const { logAccessMiddleware } = require('./utils/accessLog');
 const { initDbPool } = require('./utils/db');
 const { scheduleReminders } = require('./utils/reminders');
+const { ensureDefaultAdmin } = require('./utils/adminSeed');
 
 dotenv.config();
 
@@ -50,6 +51,7 @@ app.get('/api/docs', (req, res) => {
 });
 
 initDbPool();
+ensureDefaultAdmin();
 scheduleReminders();
 
 app.listen(PORT, () => {
