@@ -158,8 +158,11 @@ function CalendarDashboard({
           user={user}
           onClose={closeModal}
           onSave={async (data) => {
-            await onCreateOrUpdateEvent(data, selectedEvent.id);
-            closeModal();
+            try {
+              await onCreateOrUpdateEvent(data, selectedEvent.id);
+            } finally {
+              closeModal();
+            }
           }}
         />
       )}

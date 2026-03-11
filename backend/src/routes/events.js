@@ -4,6 +4,24 @@ const { authMiddleware } = require('../utils/auth');
 
 const router = express.Router();
 
+// Converte stringhe ISO (es. 2026-03-11T08:00:00.000Z) in formato DATETIME MySQL (YYYY-MM-DD HH:MM:SS)
+function toMySQLDateTime(value) {
+  if (!value) return value;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) {
+    return value;
+  }
+
+  const pad = (n) => String(n).padStart(2, '0');
+  const yyyy = d.getUTCFullYear();
+  const mm = pad(d.getUTCMonth() + 1);
+  const dd = pad(d.getUTCDate());
+  const hh = pad(d.getUTCHours());
+  const mi = pad(d.getUTCMinutes());
+  const ss = pad(d.getUTCSeconds());
+  return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`;
+}
+
 router.use(authMiddleware);
 
 async function canManageCalendar(user, calendar) {
@@ -22,7 +40,10 @@ async function canManageCalendar(user, calendar) {
 async function validateNoOverlap(db, userId, start, end, isAllDay, excludeEventId) {
   if (isAllDay) return true;
 
-  const params = [userId, end, start];
+  const startDb = toMySQLDateTime(start);
+  const endDb = toMySQLDateTime(end);
+
+  const params = [userId, endDb, startDb];
   let query = `
     SELECT COUNT(*) AS cnt
     FROM events
@@ -93,13 +114,10 @@ router.post('/', async (req, res) => {
       return res.status(403).json({ message: 'Non hai i permessi per questo calendario' });
     }
 
-    const ok = await validateNoOverlap(
-      db,
-      req.user.id,
-      start_datetime,
-      end_datetime,
-      !!is_all_day
-    );
+    const startDb = toMySQLDateTime(start_datetime);
+    const endDb = toMySQLDateTime(end_datetime);
+
+    const ok = await validateNoOverlap(db, req.user.id, startDb, endDb, !!is_all_day);
     if (!ok) {
       return res.status(400).json({ message: 'Evento in conflitto con un altro evento' });
     }
@@ -114,8 +132,8 @@ router.post('/', async (req, res) => {
         calendar_id,
         title,
         description || null,
-        start_datetime,
-        end_datetime,
+        startDb,
+        endDb,
         is_all_day ? 1 : 0,
         req.user.id
       ]
@@ -161,18 +179,11 @@ router.put('/:id', async (req, res) => {
       return res.status(403).json({ message: 'Non hai i permessi per questo evento' });
     }
 
-    const newStart = start_datetime || event.start_datetime;
-    const newEnd = end_datetime || event.end_datetime;
+    const newStart = start_datetime ? toMySQLDateTime(start_datetime) : event.start_datetime;
+    const newEnd = end_datetime ? toMySQLDateTime(end_datetime) : event.end_datetime;
     const newAllDay = typeof is_all_day === 'boolean' ? is_all_day : !!event.is_all_day;
 
-    const ok = await validateNoOverlap(
-      db,
-      req.user.id,
-      newStart,
-      newEnd,
-      newAllDay,
-      id
-    );
+    const ok = await validateNoOverlap(db, req.user.id, newStart, newEnd, newAllDay, id);
     if (!ok) {
       return res.status(400).json({ message: 'Evento in conflitto con un altro evento' });
     }

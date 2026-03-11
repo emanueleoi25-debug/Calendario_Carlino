@@ -16,7 +16,17 @@ export async function apiRequest(path, options = {}, token) {
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(text || 'Richiesta fallita');
+    // Prova a estrarre un messaggio leggibile dall'API
+    try {
+      const data = text ? JSON.parse(text) : null;
+      const msg =
+        (data && (data.message || data.error)) ||
+        text ||
+        'Richiesta fallita';
+      throw new Error(msg);
+    } catch {
+      throw new Error(text || 'Richiesta fallita');
+    }
   }
 
   return res.status === 204 ? null : res.json();
