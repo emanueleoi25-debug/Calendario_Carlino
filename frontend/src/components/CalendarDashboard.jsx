@@ -160,8 +160,9 @@ function CalendarDashboard({
           onSave={async (data) => {
             try {
               await onCreateOrUpdateEvent(data, selectedEvent.id);
-            } finally {
               closeModal();
+            } catch (e) {
+              alert(e.message || 'Errore durante il salvataggio dell\'evento');
             }
           }}
         />
