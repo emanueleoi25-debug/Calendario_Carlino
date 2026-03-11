@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import dayjs from 'dayjs';
 
-function EventFormModal({ event, calendars, onClose, onSave }) {
+function EventFormModal({ event, calendars, user, onClose, onSave }) {
   const [form, setForm] = useState({
     calendar_id: event.calendar_id,
     title: event.title,
@@ -11,6 +11,9 @@ function EventFormModal({ event, calendars, onClose, onSave }) {
     is_all_day: event.is_all_day ? true : false
   });
   const [error, setError] = useState('');
+
+  const selectableCalendars =
+    user?.role === 'admin' ? calendars : calendars.filter((c) => c.type === 'private');
 
   function updateField(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -61,7 +64,7 @@ function EventFormModal({ event, calendars, onClose, onSave }) {
               onChange={(e) => updateField('calendar_id', e.target.value)}
               className="w-full px-2 py-1 rounded-md bg-slate-900 border border-slate-700 text-xs"
             >
-              {calendars.map((c) => (
+              {selectableCalendars.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name} ({c.type})
                 </option>

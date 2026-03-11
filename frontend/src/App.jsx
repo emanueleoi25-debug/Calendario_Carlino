@@ -70,17 +70,23 @@ function App() {
   }
 
   async function handleCreateOrUpdateEvent(eventData, id) {
-    const method = id ? 'PUT' : 'POST';
-    const path = id ? `/api/events/${id}` : '/api/events';
-    await apiRequest(
-      path,
-      {
-        method,
-        body: JSON.stringify(eventData)
-      },
-      token
-    );
-    await loadCalendarsAndEvents();
+    try {
+      setError('');
+      const method = id ? 'PUT' : 'POST';
+      const path = id ? `/api/events/${id}` : '/api/events';
+      await apiRequest(
+        path,
+        {
+          method,
+          body: JSON.stringify(eventData)
+        },
+        token
+      );
+      await loadCalendarsAndEvents();
+    } catch (e) {
+      setError(e.message);
+      throw e;
+    }
   }
 
   async function handleDeleteEvent(id) {
@@ -132,6 +138,7 @@ function App() {
       <main className="flex-1 flex flex-col md:flex-row overflow-hidden">
         <div className="flex-1 overflow-hidden">
           <CalendarDashboard
+            user={user}
             calendars={calendars}
             events={events}
             view={view}

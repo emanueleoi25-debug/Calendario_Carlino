@@ -7,6 +7,7 @@ import WeekView from './WeekView.jsx';
 import MonthView from './MonthView.jsx';
 
 function CalendarDashboard({
+  user,
   calendars,
   events,
   view,
@@ -27,6 +28,11 @@ function CalendarDashboard({
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const manageableCalendars = useMemo(() => {
+    if (user?.role === 'admin') return calendars;
+    return calendars.filter((c) => c.type === 'private');
+  }, [calendars, user?.role]);
+
   const eventsWithCalendar = useMemo(() => {
     const calById = new Map(calendars.map((c) => [c.id, c]));
     return events
@@ -41,8 +47,14 @@ function CalendarDashboard({
   }, [events, calendars, filters]);
 
   function openCreateEvent(date) {
+    const defaultCalendarId =
+      (user?.role === 'admin'
+        ? calendars.find((c) => c.type === 'office')?.id
+        : manageableCalendars[0]?.id) ||
+      calendars[0]?.id;
+
     setSelectedEvent({
-      calendar_id: calendars.find((c) => c.type === 'office')?.id || calendars[0]?.id,
+      calendar_id: defaultCalendarId,
       title: '',
       description: '',
       start_datetime: date.toISOString(),
@@ -143,6 +155,7 @@ function CalendarDashboard({
         <EventFormModal
           event={selectedEvent}
           calendars={calendars}
+          user={user}
           onClose={closeModal}
           onSave={async (data) => {
             await onCreateOrUpdateEvent(data, selectedEvent.id);
