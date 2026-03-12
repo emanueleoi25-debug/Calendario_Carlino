@@ -1,5 +1,4 @@
 version: "3.9"
-
 services:
   db:
     image: mysql:8.0
@@ -18,8 +17,9 @@ services:
       - ./backend/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
       - calendario-net
-
+  
   backend:
+    image: emanueleoi/calendario-backend:latest # <--- AGGIUNTO
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -39,8 +39,9 @@ services:
       - "5000:5000"
     networks:
       - calendario-net
-
+  
   frontend:
+    image: emanueleoi/calendario-frontend:latest # <--- AGGIUNTO
     build:
       context: ./frontend
       dockerfile: Dockerfile
