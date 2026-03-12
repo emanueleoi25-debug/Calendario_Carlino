@@ -1,4 +1,17 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+function computeApiBaseUrl() {
+  const configured = import.meta.env.VITE_API_BASE_URL;
+
+  // `http://backend:5000` funziona solo dentro Docker network, non dal browser.
+  // Se viene configurato così (o non è configurato), usa l'host della pagina e la porta del backend.
+  if (!configured || configured.includes('://backend:')) {
+    const { protocol, hostname } = window.location;
+    return `${protocol}//${hostname}:5000`;
+  }
+
+  return configured;
+}
+
+const API_BASE_URL = computeApiBaseUrl();
 
 export async function apiRequest(path, options = {}, token) {
   const headers = {
